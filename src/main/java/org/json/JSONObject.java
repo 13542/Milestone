@@ -1,5 +1,6 @@
 package org.json;
 
+
 import java.io.Closeable;
 
 /*
@@ -48,6 +49,7 @@ import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * A JSONObject is an unordered collection of name/value pairs. Its external
@@ -166,6 +168,8 @@ public class JSONObject {
      */
     private final Map<String, Object> map;
 
+
+
     /**
      * It is sometimes more convenient and less ambiguous to have a
      * <code>NULL</code> object than to use Java's <code>null</code> value.
@@ -185,6 +189,7 @@ public class JSONObject {
         // retrieval based on associative access.
         // Therefore, an implementation mustn't rely on the order of the item.
         this.map = new HashMap<String, Object>();
+//        myStreamBuilder = Stream.builder();
     }
 
     /**
@@ -509,6 +514,76 @@ public class JSONObject {
             this.put(key, new JSONArray().put(object).put(value));
         }
         return this;
+    }
+
+
+    /**
+     * convert the JSONObject into a stream of hashmaps representing key-value mapping
+     * @return a stream of the JSONObjects represented as Hashmaps
+     */
+    public Stream<Object> toStream() {
+        /**
+         *  The stream builder that return the json nodes in the JSONObject as a stream
+         */
+        Stream.Builder<Object> myStreamBuilder = Stream.builder();
+        Iterator<Map.Entry<String, Object>> entrySetIterator = this.map.entrySet().iterator();
+        Map.Entry<String, Object> mapEntry;
+        while(entrySetIterator.hasNext()){
+            mapEntry = entrySetIterator.next();
+            if (mapEntry.equals(NULL)) {
+                myStreamBuilder.add(null);
+            }
+            else if (mapEntry.getValue() instanceof JSONArray  || mapEntry.getValue() instanceof JSONObject) {
+                RecursiveToStream(myStreamBuilder, "/" + mapEntry.getKey(), mapEntry.getValue());
+            }
+            else {
+                addMap(myStreamBuilder, "/" + mapEntry.getKey(), mapEntry.getValue());
+            }
+        }
+
+        return myStreamBuilder.build();
+    }
+
+    /**
+     * helper for toStream() to recursively parse the nesting structure of the json object
+     * into stream
+     */
+    private void RecursiveToStream(Stream.Builder<Object> myStreamBuilder, String key, Object value) {
+        if(value instanceof JSONArray) {
+            int jsonIndex = 0;
+            for (Object jsonObject : (JSONArray) value){
+                jsonIndex++;
+                if(jsonObject instanceof JSONArray || jsonObject instanceof JSONObject) {
+                    RecursiveToStream(myStreamBuilder, key + "/" + jsonIndex, jsonObject);
+                }
+                else {
+                    addMap(myStreamBuilder, key + "/" + jsonIndex, jsonObject);
+                }
+            }
+
+        }
+        else {
+            for (Entry<String, Object> mapEntry : ((JSONObject) value).entrySet()){
+                if(mapEntry.getValue() instanceof JSONObject || mapEntry.getValue() instanceof JSONArray) {
+                    RecursiveToStream(myStreamBuilder, key + "/" + mapEntry.getKey(), mapEntry.getValue());
+                }
+                else {
+                    addMap(myStreamBuilder, key + "/" + mapEntry.getKey(), mapEntry.getValue());
+                }
+            }
+        }
+    }
+
+    /**
+     * auxiliary function to create a new map and put into the StreamBuilder given key and value
+     * @param myStreamBuilder
+     * @param key
+     * @param value
+     */
+    private void addMap(Stream.Builder<Object> myStreamBuilder, String key, Object value){
+        HashMap<String,Object> hashMap = new HashMap<>();
+        hashMap.put(key, value);
+        myStreamBuilder.add(hashMap);
     }
 
     /**

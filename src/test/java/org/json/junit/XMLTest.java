@@ -30,24 +30,12 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
-import org.json.XML;
-import org.json.XMLParserConfiguration;
-import org.json.XMLXsiTypeConverter;
+import org.json.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -65,7 +53,26 @@ public class XMLTest {
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
 
-    
+    // milestone3
+    @Test
+    public void milestone3Test() {
+        try {
+            FileReader reader = new FileReader("src/test/resources/books.xml");
+            Function<String, String> keyTransformer = (key) -> key + "_swe262";
+            JSONObject actual = XML.toJSONObject(reader, keyTransformer);
+            reader.close();
+            String expect = "{\"catalog_swe262\":{\"book_swe262\":[{\"genre_swe262\":\"Computer\",\"description_swe262\":\"An in-depth look at creating applications\\r\\n            with XML.\",\"publish_date_swe262\":\"2000-10-01\",\"title_swe262\":\"XML Developer's Guide\",\"price_swe262\":44.95,\"author_swe262\":\"Gambardella, Matthew\",\"id_swe262\":\"bk101\"},{\"genre_swe262\":\"Fantasy\",\"description_swe262\":\"A former architect battles corporate zombies,\\r\\n            an evil sorceress, and her own childhood to become queen\\r\\n            of the world.\",\"publish_date_swe262\":\"2000-12-16\",\"title_swe262\":\"Midnight Rain\",\"price_swe262\":5.95,\"author_swe262\":\"Ralls, Kim\",\"id_swe262\":\"bk102\"},{\"genre_swe262\":\"Fantasy\",\"description_swe262\":\"After the collapse of a nanotechnology\\r\\n            society in England, the young survivors lay the\\r\\n            foundation for a new society.\",\"publish_date_swe262\":\"2000-11-17\",\"title_swe262\":\"Maeve Ascendant\",\"price_swe262\":5.95,\"author_swe262\":\"Corets, Eva\",\"id_swe262\":\"bk103\"},{\"genre_swe262\":\"Fantasy\",\"description_swe262\":\"In post-apocalypse England, the mysterious\\r\\n            agent known only as Oberon helps to create a new life\\r\\n            for the inhabitants of London. Sequel to Maeve\\r\\n            Ascendant.\",\"publish_date_swe262\":\"2001-03-10\",\"title_swe262\":\"Oberon's Legacy\",\"price_swe262\":5.95,\"author_swe262\":\"Corets, Eva\",\"id_swe262\":\"bk104\"},{\"genre_swe262\":\"Fantasy\",\"description_swe262\":\"The two daughters of Maeve, half-sisters,\\r\\n            battle one another for control of England. Sequel to\\r\\n            Oberon's Legacy.\",\"publish_date_swe262\":\"2001-09-10\",\"title_swe262\":\"The Sundered Grail\",\"price_swe262\":5.95,\"author_swe262\":\"Corets, Eva\",\"id_swe262\":\"bk105\"},{\"genre_swe262\":\"Romance\",\"description_swe262\":\"When Carla meets Paul at an ornithology\\r\\n            conference, tempers fly as feathers get ruffled.\",\"publish_date_swe262\":\"2000-09-02\",\"title_swe262\":\"Lover Birds\",\"price_swe262\":4.95,\"author_swe262\":\"Randall, Cynthia\",\"id_swe262\":\"bk106\"},{\"genre_swe262\":\"Romance\",\"description_swe262\":\"A deep sea diver finds true love twenty\\r\\n            thousand leagues beneath the sea.\",\"publish_date_swe262\":\"2000-11-02\",\"title_swe262\":\"Splish Splash\",\"price_swe262\":4.95,\"author_swe262\":\"Thurman, Paula\",\"id_swe262\":\"bk107\"},{\"genre_swe262\":\"Horror\",\"description_swe262\":\"An anthology of horror stories about roaches,\\r\\n            centipedes, scorpions  and other insects.\",\"publish_date_swe262\":\"2000-12-06\",\"title_swe262\":\"Creepy Crawlies\",\"price_swe262\":4.95,\"author_swe262\":\"Knorr, Stefan\",\"id_swe262\":\"bk108\"},{\"genre_swe262\":\"Science Fiction\",\"description_swe262\":\"After an inadvertant trip through a Heisenberg\\r\\n            Uncertainty Device, James Salway discovers the problems\\r\\n            of being quantum.\",\"publish_date_swe262\":\"2000-11-02\",\"title_swe262\":\"Paradox Lost\",\"price_swe262\":6.95,\"author_swe262\":\"Kress, Peter\",\"id_swe262\":\"bk109\"},{\"genre_swe262\":\"Computer\",\"description_swe262\":\"Microsoft's .NET initiative is explored in\\r\\n            detail in this deep programmer's reference.\",\"publish_date_swe262\":\"2000-12-09\",\"title_swe262\":\"Microsoft .NET: The Programming Bible\",\"price_swe262\":36.95,\"author_swe262\":\"O'Brien, Tim\",\"id_swe262\":\"bk110\"},{\"genre_swe262\":\"Computer\",\"description_swe262\":\"The Microsoft MSXML3 parser is covered in\\r\\n            detail, with attention to XML DOM interfaces, XSLT processing,\\r\\n            SAX and more.\",\"publish_date_swe262\":\"2000-12-01\",\"title_swe262\":\"MSXML3: A Comprehensive Guide\",\"price_swe262\":36.95,\"author_swe262\":\"O'Brien, Tim\",\"id_swe262\":\"bk111\"},{\"genre_swe262\":\"Computer\",\"description_swe262\":\"Microsoft Visual Studio 7 is explored in depth,\\r\\n            looking at how Visual Basic, Visual C++, C#, and ASP+ are\\r\\n            integrated into a comprehensive development\\r\\n            environment.\",\"publish_date_swe262\":\"2001-04-16\",\"title_swe262\":\"Visual Studio 7: A Comprehensive Guide\",\"price_swe262\":49.95,\"author_swe262\":\"Galos, Mike\",\"id_swe262\":\"bk112\"}]}}";
+
+            Util.compareActualVsExpectedJsonObjects(actual, new JSONObject(expect));
+
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found.");
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("Fail to close file.");
+            e.printStackTrace();
+        }
+    }
     /**
      * JSONObject from a null XML string.
      * Expects a NullPointerException

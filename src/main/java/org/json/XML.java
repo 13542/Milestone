@@ -24,12 +24,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.function.Function;
 
 
 /**
@@ -880,5 +883,80 @@ public class XML {
                 : (string.length() == 0) ? "<" + tagName + "/>" : "<" + tagName
                         + ">" + string + "</" + tagName + ">";
 
+    }
+
+
+    //new code
+    // milestone2
+    public static JSONObject toJSONObject(Reader reader, JSONPointer path) throws IOException {
+        JSONObject xmlJSONObj = XML.toJSONObject(reader);
+        String[] originpat = path.toString().replace("/"," ").trim().split(" ");
+        String obj = "";
+        for(int i=0;i<originpat.length;i++){
+            if(i==originpat.length-1){
+                obj = "{\""+originpat[i]+"\":"+(String) xmlJSONObj.get(originpat[i])+"}";
+            }
+            else xmlJSONObj = xmlJSONObj.getJSONObject(originpat[i]);
+        }
+        return new JSONObject(obj);
+
+    }
+    public static JSONObject toJSONObject(Reader reader, JSONPointer path,JSONObject replacement) throws IOException {
+        JSONObject xmlJSONObj = XML.toJSONObject(reader);
+        String[] originpat = path.toString().replace("/"," ").trim().split(" ");
+        String obj = "";
+        JSONObject copy = xmlJSONObj;
+        for(int i=0;i<originpat.length;i++){
+            if(i==originpat.length-1){
+                copy.put(originpat[i],replacement.get(originpat[i]));
+            }
+            else copy = copy.getJSONObject(originpat[i]);
+        }
+        return xmlJSONObj;
+    }
+
+
+    // milestone3
+    public static JSONObject toJSONObject(Reader reader, Function<String, String> keyTransformer) {
+        XMLTokener x = new XMLTokener(reader);
+        ArrayList<String> tags = new ArrayList<>();
+        while (x.more()) {
+            x.skipPast("<");
+            if (x.more()) {
+                String c = (String) x.nextContent();
+                if (c.charAt(0) != '!' && c.charAt(0) != '?') {
+                    if (c.charAt(0) != '/') {
+                        int beginIndex = 0;
+                        int endIndex = c.indexOf(">");
+                        if (c.substring(beginIndex, endIndex).contains("id=")) {
+                            endIndex = c.indexOf("id=") - 1;
+                            String originalKey = c.substring(beginIndex, endIndex);
+                            String newKey = keyTransformer.apply(originalKey);
+
+                            String newIdKey = keyTransformer.apply("id");
+                            c = "<" + newKey + " " + newIdKey + c.substring(c.indexOf("id=") + 2);
+                        } else {
+                            String originalKey = c.substring(beginIndex, endIndex);
+                            String newKey = keyTransformer.apply(originalKey);
+                            c = "<" + newKey + c.substring(endIndex);
+                        }
+                    } else {
+                        int beginIndex = 1;
+                        int endIndex = c.indexOf(">");
+                        String originalKey = c.substring(beginIndex, endIndex);
+                        String newKey = keyTransformer.apply(originalKey);
+                        c = "</" + newKey + c.substring(endIndex);
+                    }
+
+                    tags.add(c);
+                }
+            }
+        }
+        String tagsToString = "";
+        for (int i = 0; i < tags.size(); i++) {
+            tagsToString = tagsToString + tags.get(i);
+        }
+
+        return toJSONObject(tagsToString);
     }
 }
