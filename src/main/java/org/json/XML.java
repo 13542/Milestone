@@ -24,7 +24,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Method;
@@ -32,6 +31,10 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 
@@ -122,7 +125,7 @@ public class XML {
     /**
      * Replace special characters with XML escapes:
      *
-     * <pre>{@code 
+     * <pre>{@code
      * &amp; (ampersand) is replaced by &amp;amp;
      * &lt; (less than) is replaced by &amp;lt;
      * &gt; (greater than) is replaced by &amp;gt;
@@ -138,29 +141,29 @@ public class XML {
         StringBuilder sb = new StringBuilder(string.length());
         for (final int cp : codePointIterator(string)) {
             switch (cp) {
-            case '&':
-                sb.append("&amp;");
-                break;
-            case '<':
-                sb.append("&lt;");
-                break;
-            case '>':
-                sb.append("&gt;");
-                break;
-            case '"':
-                sb.append("&quot;");
-                break;
-            case '\'':
-                sb.append("&apos;");
-                break;
-            default:
-                if (mustEscape(cp)) {
-                    sb.append("&#x");
-                    sb.append(Integer.toHexString(cp));
-                    sb.append(';');
-                } else {
-                    sb.appendCodePoint(cp);
-                }
+                case '&':
+                    sb.append("&amp;");
+                    break;
+                case '<':
+                    sb.append("&lt;");
+                    break;
+                case '>':
+                    sb.append("&gt;");
+                    break;
+                case '"':
+                    sb.append("&quot;");
+                    break;
+                case '\'':
+                    sb.append("&apos;");
+                    break;
+                default:
+                    if (mustEscape(cp)) {
+                        sb.append("&#x");
+                        sb.append(Integer.toHexString(cp));
+                        sb.append(';');
+                    } else {
+                        sb.appendCodePoint(cp);
+                    }
             }
         }
         return sb.toString();
@@ -183,13 +186,13 @@ public class XML {
                 && cp != 0x9
                 && cp != 0xA
                 && cp != 0xD
-            ) || !(
+        ) || !(
                 // valid the range of acceptable characters that aren't control
                 (cp >= 0x20 && cp <= 0xD7FF)
-                || (cp >= 0xE000 && cp <= 0xFFFD)
-                || (cp >= 0x10000 && cp <= 0x10FFFF)
-            )
-        ;
+                        || (cp >= 0xE000 && cp <= 0xFFFD)
+                        || (cp >= 0x10000 && cp <= 0x10FFFF)
+        )
+                ;
     }
 
     /**
@@ -447,7 +450,7 @@ public class XML {
                                         context.accumulate(tagName, jsonObject);
                                     }
                                 }
-                                
+
                                 return false;
                             }
                         }
@@ -511,7 +514,7 @@ public class XML {
         }
         return string;
     }
-    
+
     /**
      * direct copy of {@link JSONObject#stringToNumber(String)} to maintain Android support.
      */
@@ -558,7 +561,7 @@ public class XML {
             // integer representation.
             // This will narrow any values to the smallest reasonable Object representation
             // (Integer, Long, or BigInteger)
-            
+
             // BigInteger down conversion: We use a similar bitLength compare as
             // BigInteger#intValueExact uses. Increases GC, but objects hold
             // only what they need. i.e. Less runtime overhead if the value is
@@ -574,7 +577,7 @@ public class XML {
         }
         throw new NumberFormatException("val ["+val+"] is not a valid number.");
     }
-    
+
     /**
      * direct copy of {@link JSONObject#isDecimalNotation(String)} to maintain Android support.
      */
@@ -592,7 +595,7 @@ public class XML {
      * name/value pairs and arrays of values. JSON does not does not like to
      * distinguish between elements and attributes. Sequences of similar
      * elements are represented as JSONArrays. Content text may be placed in a
-     * "content" member. Comments, prologs, DTDs, and <pre>{@code 
+     * "content" member. Comments, prologs, DTDs, and <pre>{@code
      * &lt;[ [ ]]>}</pre>
      * are ignored.
      *
@@ -613,7 +616,7 @@ public class XML {
      * name/value pairs and arrays of values. JSON does not does not like to
      * distinguish between elements and attributes. Sequences of similar
      * elements are represented as JSONArrays. Content text may be placed in a
-     * "content" member. Comments, prologs, DTDs, and <pre>{@code 
+     * "content" member. Comments, prologs, DTDs, and <pre>{@code
      * &lt;[ [ ]]>}</pre>
      * are ignored.
      *
@@ -693,7 +696,7 @@ public class XML {
      * name/value pairs and arrays of values. JSON does not does not like to
      * distinguish between elements and attributes. Sequences of similar
      * elements are represented as JSONArrays. Content text may be placed in a
-     * "content" member. Comments, prologs, DTDs, and <pre>{@code 
+     * "content" member. Comments, prologs, DTDs, and <pre>{@code
      * &lt;[ [ ]]>}</pre>
      * are ignored.
      *
@@ -719,7 +722,7 @@ public class XML {
      * name/value pairs and arrays of values. JSON does not does not like to
      * distinguish between elements and attributes. Sequences of similar
      * elements are represented as JSONArrays. Content text may be placed in a
-     * "content" member. Comments, prologs, DTDs, and <pre>{@code 
+     * "content" member. Comments, prologs, DTDs, and <pre>{@code
      * &lt;[ [ ]]>}</pre>
      * are ignored.
      *
@@ -807,7 +810,7 @@ public class XML {
                         ja = (JSONArray) value;
                         int jaLength = ja.length();
                         // don't use the new iterator API to maintain support for Android
-						for (int i = 0; i < jaLength; i++) {
+                        for (int i = 0; i < jaLength; i++) {
                             if (i > 0) {
                                 sb.append('\n');
                             }
@@ -824,7 +827,7 @@ public class XML {
                     ja = (JSONArray) value;
                     int jaLength = ja.length();
                     // don't use the new iterator API to maintain support for Android
-					for (int i = 0; i < jaLength; i++) {
+                    for (int i = 0; i < jaLength; i++) {
                         Object val = ja.opt(i);
                         if (val instanceof JSONArray) {
                             sb.append('<');
@@ -868,7 +871,7 @@ public class XML {
             }
             int jaLength = ja.length();
             // don't use the new iterator API to maintain support for Android
-			for (int i = 0; i < jaLength; i++) {
+            for (int i = 0; i < jaLength; i++) {
                 Object val = ja.opt(i);
                 // XML does not have good support for arrays. If an array
                 // appears in a place where XML is lacking, synthesize an
@@ -881,42 +884,9 @@ public class XML {
         string = (object == null) ? "null" : escape(object.toString());
         return (tagName == null) ? "\"" + string + "\""
                 : (string.length() == 0) ? "<" + tagName + "/>" : "<" + tagName
-                        + ">" + string + "</" + tagName + ">";
+                + ">" + string + "</" + tagName + ">";
 
     }
-
-
-    //new code
-    // milestone2
-    public static JSONObject toJSONObject(Reader reader, JSONPointer path) throws IOException {
-        JSONObject xmlJSONObj = XML.toJSONObject(reader);
-        String[] originpat = path.toString().replace("/"," ").trim().split(" ");
-        String obj = "";
-        for(int i=0;i<originpat.length;i++){
-            if(i==originpat.length-1){
-                obj = "{\""+originpat[i]+"\":"+(String) xmlJSONObj.get(originpat[i])+"}";
-            }
-            else xmlJSONObj = xmlJSONObj.getJSONObject(originpat[i]);
-        }
-        return new JSONObject(obj);
-
-    }
-    public static JSONObject toJSONObject(Reader reader, JSONPointer path,JSONObject replacement) throws IOException {
-        JSONObject xmlJSONObj = XML.toJSONObject(reader);
-        String[] originpat = path.toString().replace("/"," ").trim().split(" ");
-        String obj = "";
-        JSONObject copy = xmlJSONObj;
-        for(int i=0;i<originpat.length;i++){
-            if(i==originpat.length-1){
-                copy.put(originpat[i],replacement.get(originpat[i]));
-            }
-            else copy = copy.getJSONObject(originpat[i]);
-        }
-        return xmlJSONObj;
-    }
-
-
-    // milestone3
     public static JSONObject toJSONObject(Reader reader, Function<String, String> keyTransformer) {
         XMLTokener x = new XMLTokener(reader);
         ArrayList<String> tags = new ArrayList<>();
@@ -958,5 +928,42 @@ public class XML {
         }
 
         return toJSONObject(tagsToString);
+    }
+
+    public static Future<JSONObject> toJSONObject(Reader myReader, Function<String, String> myKeyTransformer, Consumer<Exception> myExceptionHandler) {
+        WorkerThread future = new WorkerThread();
+        Future<JSONObject> futureJsonObject = null;
+        try {
+            if (myKeyTransformer == null) {
+                throw new Exception();
+            }
+            futureJsonObject = future.toJSONObject(myReader, myKeyTransformer);
+            if (futureJsonObject.isDone()) {
+                future.terminate();
+            }
+        }
+        catch (Exception e) {
+            myExceptionHandler.accept(e);
+        }
+        return futureJsonObject;
+    }
+
+
+    private static class WorkerThread {
+        private ExecutorService workerThread = Executors.newSingleThreadExecutor();
+
+        public Future<JSONObject> toJSONObject(Reader myReader, Function<String, String> myKeyTransformer) throws Exception{
+            try {
+                return workerThread.submit(() -> XML.toJSONObject(myReader, myKeyTransformer));
+            }
+            catch(Exception e){
+                System.out.println(e.getMessage());
+                throw e;
+            }
+        }
+
+        public void terminate() {
+            workerThread.shutdown();
+        }
     }
 }
