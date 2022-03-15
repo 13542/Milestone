@@ -887,6 +887,8 @@ public class XML {
                 + ">" + string + "</" + tagName + ">";
 
     }
+
+    //milestone3
     public static JSONObject toJSONObject(Reader reader, Function<String, String> keyTransformer) {
         XMLTokener x = new XMLTokener(reader);
         ArrayList<String> tags = new ArrayList<>();

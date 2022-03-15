@@ -33,6 +33,9 @@ import static org.junit.Assert.fail;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.json.*;
@@ -48,7 +51,7 @@ import org.junit.rules.TemporaryFolder;
 public class XMLTest {
     /**
      * JUnit supports temporary files and folders that are cleaned up after the test.
-     * https://garygregory.wordpress.com/2010/01/20/junit-tip-use-rules-to-manage-temporary-files-and-folders/ 
+     * https://garygregory.wordpress.com/2010/01/20/junit-tip-use-rules-to-manage-temporary-files-and-folders/
      */
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
@@ -111,15 +114,15 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleInvalidSlashInTag() {
-        String xmlStr = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
-            "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
-            "    <address>\n"+
-            "       <name/x>\n"+
-            "       <street>abc street</street>\n"+
-            "   </address>\n"+
-            "</addresses>";
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
+                        "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
+                        "    <address>\n"+
+                        "       <name/x>\n"+
+                        "       <street>abc street</street>\n"+
+                        "   </address>\n"+
+                        "</addresses>";
         try {
             XML.toJSONObject(xmlStr);
             fail("Expecting a JSONException");
@@ -136,15 +139,15 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleInvalidBangInTag() {
-        String xmlStr = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
-            "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
-            "    <address>\n"+
-            "       <name/>\n"+
-            "       <!>\n"+
-            "   </address>\n"+
-            "</addresses>";
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
+                        "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
+                        "    <address>\n"+
+                        "       <name/>\n"+
+                        "       <!>\n"+
+                        "   </address>\n"+
+                        "</addresses>";
         try {
             XML.toJSONObject(xmlStr);
             fail("Expecting a JSONException");
@@ -161,15 +164,15 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleInvalidBangNoCloseInTag() {
-        String xmlStr = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
-            "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
-            "    <address>\n"+
-            "       <name/>\n"+
-            "       <!\n"+
-            "   </address>\n"+
-            "</addresses>";
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
+                        "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
+                        "    <address>\n"+
+                        "       <name/>\n"+
+                        "       <!\n"+
+                        "   </address>\n"+
+                        "</addresses>";
         try {
             XML.toJSONObject(xmlStr);
             fail("Expecting a JSONException");
@@ -186,15 +189,15 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleNoCloseStartTag() {
-        String xmlStr = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
-            "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
-            "    <address>\n"+
-            "       <name/>\n"+
-            "       <abc\n"+
-            "   </address>\n"+
-            "</addresses>";
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
+                        "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
+                        "    <address>\n"+
+                        "       <name/>\n"+
+                        "       <abc\n"+
+                        "   </address>\n"+
+                        "</addresses>";
         try {
             XML.toJSONObject(xmlStr);
             fail("Expecting a JSONException");
@@ -211,15 +214,15 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleInvalidCDATABangInTag() {
-        String xmlStr = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
-            "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
-            "    <address>\n"+
-            "       <name>Joe Tester</name>\n"+
-            "       <![[]>\n"+
-            "   </address>\n"+
-            "</addresses>";
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
+                        "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
+                        "    <address>\n"+
+                        "       <name>Joe Tester</name>\n"+
+                        "       <![[]>\n"+
+                        "   </address>\n"+
+                        "</addresses>";
         try {
             XML.toJSONObject(xmlStr);
             fail("Expecting a JSONException");
@@ -255,19 +258,19 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleNoStartTag() {
-        String xmlStr = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
-            "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
-            "    <address>\n"+
-            "       <name/>\n"+
-            "       <nocontent/>>\n"+
-            "   </address>\n"+
-            "</addresses>";
-        String expectedStr = 
-            "{\"addresses\":{\"address\":{\"name\":\"\",\"nocontent\":\"\",\""+
-            "content\":\">\"},\"xsi:noNamespaceSchemaLocation\":\"test.xsd\",\""+
-            "xmlns:xsi\":\"http://www.w3.org/2001/XMLSchema-instance\"}}";
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
+                        "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
+                        "    <address>\n"+
+                        "       <name/>\n"+
+                        "       <nocontent/>>\n"+
+                        "   </address>\n"+
+                        "</addresses>";
+        String expectedStr =
+                "{\"addresses\":{\"address\":{\"name\":\"\",\"nocontent\":\"\",\""+
+                        "content\":\">\"},\"xsi:noNamespaceSchemaLocation\":\"test.xsd\",\""+
+                        "xmlns:xsi\":\"http://www.w3.org/2001/XMLSchema-instance\"}}";
         JSONObject jsonObject = XML.toJSONObject(xmlStr);
         JSONObject expectedJsonObject = new JSONObject(expectedStr);
         Util.compareActualVsExpectedJsonObjects(jsonObject,expectedJsonObject);
@@ -278,34 +281,34 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleSimpleXML() {
-        String xmlStr = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
-            "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
-            "   <address>\n"+
-            "       <name>Joe Tester</name>\n"+
-            "       <street>[CDATA[Baker street 5]</street>\n"+
-            "       <NothingHere/>\n"+
-            "       <TrueValue>true</TrueValue>\n"+
-            "       <FalseValue>false</FalseValue>\n"+
-            "       <NullValue>null</NullValue>\n"+
-            "       <PositiveValue>42</PositiveValue>\n"+
-            "       <NegativeValue>-23</NegativeValue>\n"+
-            "       <DoubleValue>-23.45</DoubleValue>\n"+
-            "       <Nan>-23x.45</Nan>\n"+
-            "       <ArrayOfNum>1, 2, 3, 4.1, 5.2</ArrayOfNum>\n"+
-            "   </address>\n"+
-            "</addresses>";
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
+                        "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
+                        "   <address>\n"+
+                        "       <name>Joe Tester</name>\n"+
+                        "       <street>[CDATA[Baker street 5]</street>\n"+
+                        "       <NothingHere/>\n"+
+                        "       <TrueValue>true</TrueValue>\n"+
+                        "       <FalseValue>false</FalseValue>\n"+
+                        "       <NullValue>null</NullValue>\n"+
+                        "       <PositiveValue>42</PositiveValue>\n"+
+                        "       <NegativeValue>-23</NegativeValue>\n"+
+                        "       <DoubleValue>-23.45</DoubleValue>\n"+
+                        "       <Nan>-23x.45</Nan>\n"+
+                        "       <ArrayOfNum>1, 2, 3, 4.1, 5.2</ArrayOfNum>\n"+
+                        "   </address>\n"+
+                        "</addresses>";
 
-        String expectedStr = 
-            "{\"addresses\":{\"address\":{\"street\":\"[CDATA[Baker street 5]\","+
-            "\"name\":\"Joe Tester\",\"NothingHere\":\"\",TrueValue:true,\n"+
-            "\"FalseValue\":false,\"NullValue\":null,\"PositiveValue\":42,\n"+
-            "\"NegativeValue\":-23,\"DoubleValue\":-23.45,\"Nan\":-23x.45,\n"+
-            "\"ArrayOfNum\":\"1, 2, 3, 4.1, 5.2\"\n"+
-            "},\"xsi:noNamespaceSchemaLocation\":"+
-            "\"test.xsd\",\"xmlns:xsi\":\"http://www.w3.org/2001/"+
-            "XMLSchema-instance\"}}";
+        String expectedStr =
+                "{\"addresses\":{\"address\":{\"street\":\"[CDATA[Baker street 5]\","+
+                        "\"name\":\"Joe Tester\",\"NothingHere\":\"\",TrueValue:true,\n"+
+                        "\"FalseValue\":false,\"NullValue\":null,\"PositiveValue\":42,\n"+
+                        "\"NegativeValue\":-23,\"DoubleValue\":-23.45,\"Nan\":-23x.45,\n"+
+                        "\"ArrayOfNum\":\"1, 2, 3, 4.1, 5.2\"\n"+
+                        "},\"xsi:noNamespaceSchemaLocation\":"+
+                        "\"test.xsd\",\"xmlns:xsi\":\"http://www.w3.org/2001/"+
+                        "XMLSchema-instance\"}}";
 
         compareStringToJSONObject(xmlStr, expectedStr);
         compareReaderToJSONObject(xmlStr, expectedStr);
@@ -317,31 +320,31 @@ public class XMLTest {
      */
     @Test
     public void testXmlEscapeToJson(){
-        String xmlStr = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<root>"+
-            "<rawQuote>\"</rawQuote>"+
-            "<euro>A &#8364;33</euro>"+
-            "<euroX>A &#x20ac;22&#x20AC;</euroX>"+
-            "<unknown>some text &copy;</unknown>"+
-            "<known>&#x0022; &quot; &amp; &apos; &lt; &gt;</known>"+
-            "<high>&#x1D122; &#x10165;</high>" +
-            "</root>";
-        String expectedStr = 
-            "{\"root\":{" +
-            "\"rawQuote\":\"\\\"\"," +
-            "\"euro\":\"A €33\"," +
-            "\"euroX\":\"A €22€\"," +
-            "\"unknown\":\"some text &copy;\"," +
-            "\"known\":\"\\\" \\\" & ' < >\"," +
-            "\"high\":\"𝄢 𐅥\""+
-            "}}";
-        
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<root>"+
+                        "<rawQuote>\"</rawQuote>"+
+                        "<euro>A &#8364;33</euro>"+
+                        "<euroX>A &#x20ac;22&#x20AC;</euroX>"+
+                        "<unknown>some text &copy;</unknown>"+
+                        "<known>&#x0022; &quot; &amp; &apos; &lt; &gt;</known>"+
+                        "<high>&#x1D122; &#x10165;</high>" +
+                        "</root>";
+        String expectedStr =
+                "{\"root\":{" +
+                        "\"rawQuote\":\"\\\"\"," +
+                        "\"euro\":\"A €33\"," +
+                        "\"euroX\":\"A €22€\"," +
+                        "\"unknown\":\"some text &copy;\"," +
+                        "\"known\":\"\\\" \\\" & ' < >\"," +
+                        "\"high\":\"𝄢 𐅥\""+
+                        "}}";
+
         compareStringToJSONObject(xmlStr, expectedStr);
         compareReaderToJSONObject(xmlStr, expectedStr);
         compareFileToJSONObject(xmlStr, expectedStr);
     }
-    
+
     /**
      * Tests that control characters are escaped.
      */
@@ -375,18 +378,18 @@ public class XMLTest {
     @Test
     public void shouldHandleCommentsInXML() {
 
-        String xmlStr = 
+        String xmlStr =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-                "<!-- this is a comment -->\n"+
-                "<addresses>\n"+
-                "   <address>\n"+
-                "       <![CDATA[ this is -- <another> comment ]]>\n"+
-                "       <name>Joe Tester</name>\n"+
-                "       <!-- this is a - multi line \n"+
-                "            comment -->\n"+
-                "       <street>Baker street 5</street>\n"+
-                "   </address>\n"+
-                "</addresses>";
+                        "<!-- this is a comment -->\n"+
+                        "<addresses>\n"+
+                        "   <address>\n"+
+                        "       <![CDATA[ this is -- <another> comment ]]>\n"+
+                        "       <name>Joe Tester</name>\n"+
+                        "       <!-- this is a - multi line \n"+
+                        "            comment -->\n"+
+                        "       <street>Baker street 5</street>\n"+
+                        "   </address>\n"+
+                        "</addresses>";
         JSONObject jsonObject = XML.toJSONObject(xmlStr);
         String expectedStr = "{\"addresses\":{\"address\":{\"street\":\"Baker "+
                 "street 5\",\"name\":\"Joe Tester\",\"content\":\" this is -- "+
@@ -400,25 +403,25 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleToString() {
-        String xmlStr = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
-            "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
-            "   <address>\n"+
-            "       <name>[CDATA[Joe &amp; T &gt; e &lt; s &quot; t &apos; er]]</name>\n"+
-            "       <street>Baker street 5</street>\n"+
-            "       <ArrayOfNum>1, 2, 3, 4.1, 5.2</ArrayOfNum>\n"+
-            "   </address>\n"+
-            "</addresses>";
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
+                        "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
+                        "   <address>\n"+
+                        "       <name>[CDATA[Joe &amp; T &gt; e &lt; s &quot; t &apos; er]]</name>\n"+
+                        "       <street>Baker street 5</street>\n"+
+                        "       <ArrayOfNum>1, 2, 3, 4.1, 5.2</ArrayOfNum>\n"+
+                        "   </address>\n"+
+                        "</addresses>";
 
-        String expectedStr = 
+        String expectedStr =
                 "{\"addresses\":{\"address\":{\"street\":\"Baker street 5\","+
-                "\"name\":\"[CDATA[Joe & T > e < s \\\" t \\\' er]]\","+
-                "\"ArrayOfNum\":\"1, 2, 3, 4.1, 5.2\"\n"+
-                "},\"xsi:noNamespaceSchemaLocation\":"+
-                "\"test.xsd\",\"xmlns:xsi\":\"http://www.w3.org/2001/"+
-                "XMLSchema-instance\"}}";
-        
+                        "\"name\":\"[CDATA[Joe & T > e < s \\\" t \\\' er]]\","+
+                        "\"ArrayOfNum\":\"1, 2, 3, 4.1, 5.2\"\n"+
+                        "},\"xsi:noNamespaceSchemaLocation\":"+
+                        "\"test.xsd\",\"xmlns:xsi\":\"http://www.w3.org/2001/"+
+                        "XMLSchema-instance\"}}";
+
         JSONObject jsonObject = XML.toJSONObject(xmlStr);
         String xmlToStr = XML.toString(jsonObject);
         JSONObject finalJsonObject = XML.toJSONObject(xmlToStr);
@@ -448,9 +451,9 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleContentArraytoString() {
-        String expectedStr = 
-            "{\"addresses\":{" +
-            "\"content\":[1, 2, 3]}}";
+        String expectedStr =
+                "{\"addresses\":{" +
+                        "\"content\":[1, 2, 3]}}";
         JSONObject expectedJsonObject = new JSONObject(expectedStr);
         String finalStr = XML.toString(expectedJsonObject);
         String expectedFinalStr = "<addresses>"+
@@ -465,9 +468,9 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleArraytoString() {
-        String expectedStr = 
-            "{\"addresses\":{"+
-            "\"something\":[1, 2, 3]}}";
+        String expectedStr =
+                "{\"addresses\":{"+
+                        "\"something\":[1, 2, 3]}}";
         JSONObject expectedJsonObject = new JSONObject(expectedStr);
         String finalStr = XML.toString(expectedJsonObject);
         String expectedFinalStr = "<addresses>"+
@@ -476,7 +479,7 @@ public class XMLTest {
         assertEquals("Should handle expectedFinal: ["+expectedStr+"] final: ["+
                 finalStr+"]", expectedFinalStr, finalStr);
     }
-    
+
     /**
      * Tests that the XML output for empty arrays is consistent.
      */
@@ -493,7 +496,7 @@ public class XMLTest {
         String output2 = XML.toString(jo2,"jo");
         assertEquals("Expected an empty root tag", expected, output2);
     }
-    
+
     /**
      * Tests that the XML output for arrays is consistent when an internal array is empty.
      */
@@ -510,7 +513,7 @@ public class XMLTest {
         String output2 = XML.toString(jo2,"jo");
         assertEquals("Expected a matching array", expected, output2);
     }
-   
+
     /**
      * Tests that the XML output for arrays is consistent when arrays are not empty.
      */
@@ -551,10 +554,10 @@ public class XMLTest {
      */
     @Test
     public void shouldHandleNestedArraytoString() {
-        String xmlStr = 
-            "{\"addresses\":{\"address\":{\"name\":\"\",\"nocontent\":\"\","+
-            "\"outer\":[[1], [2], [3]]},\"xsi:noNamespaceSchemaLocation\":\"test.xsd\",\""+
-            "xmlns:xsi\":\"http://www.w3.org/2001/XMLSchema-instance\"}}";
+        String xmlStr =
+                "{\"addresses\":{\"address\":{\"name\":\"\",\"nocontent\":\"\","+
+                        "\"outer\":[[1], [2], [3]]},\"xsi:noNamespaceSchemaLocation\":\"test.xsd\",\""+
+                        "xmlns:xsi\":\"http://www.w3.org/2001/XMLSchema-instance\"}}";
         JSONObject jsonObject = new JSONObject(xmlStr);
         String finalStr = XML.toString(jsonObject);
         JSONObject finalJsonObject = XML.toJSONObject(finalStr);
@@ -570,7 +573,7 @@ public class XMLTest {
 
 
     /**
-     * Possible bug: 
+     * Possible bug:
      * Illegal node-names must be converted to legal XML-node-names.
      * The given example shows 2 nodes which are valid for JSON, but not for XML.
      * Therefore illegal arguments should be converted to e.g. an underscore (_).
@@ -608,7 +611,7 @@ public class XMLTest {
         // This is a possible preferred result
         // String expectedXML = "<nullValue/>";
         /**
-         * This is the current behavior. JSONObject.NULL is emitted as 
+         * This is the current behavior. JSONObject.NULL is emitted as
          * the string, "null".
          */
         String actualXML = "<nullValue>null</nullValue>";
@@ -646,8 +649,8 @@ public class XMLTest {
 
         /*
          * text content is accumulated in a "content" inside a local JSONObject.
-         * If there is only one instance, it is saved in the context (a different JSONObject 
-         * from the calling code. and the content element is discarded. 
+         * If there is only one instance, it is saved in the context (a different JSONObject
+         * from the calling code. and the content element is discarded.
          */
         xmlStr =  "<tag1>value 1</tag1>";
         jsonObject = XML.toJSONObject(xmlStr);
@@ -655,7 +658,7 @@ public class XMLTest {
         assertTrue("3. value tag1", "value 1".equals(jsonObject.get("tag1")));
 
         /*
-         * array-style text content (multiple tags with the same name) is 
+         * array-style text content (multiple tags with the same name) is
          * accumulated in a local JSONObject with key="content" and value=JSONArray,
          * saved in the context, and then the local JSONObject is discarded.
          */
@@ -671,8 +674,8 @@ public class XMLTest {
 
         /*
          * Complex content is accumulated in a "content" field. For example, an element
-         * may contain a mix of child elements and text. Each text segment is 
-         * accumulated to content. 
+         * may contain a mix of child elements and text. Each text segment is
+         * accumulated to content.
          */
         xmlStr =  "<tag1>val1<tag2/>val2</tag1>";
         jsonObject = XML.toJSONObject(xmlStr);
@@ -688,7 +691,7 @@ public class XMLTest {
         assertTrue("5. content array entry 1", "val2".equals(jsonArray.get(1)));
 
         /*
-         * If there is only 1 complex text content, then it is accumulated in a 
+         * If there is only 1 complex text content, then it is accumulated in a
          * "content" field as a string.
          */
         xmlStr =  "<tag1>val1<tag2/></tag1>";
@@ -702,7 +705,7 @@ public class XMLTest {
         /*
          * In this corner case, the content sibling happens to have key=content
          * We end up with an array within an array, and no content element.
-         * This is probably a bug. 
+         * This is probably a bug.
          */
         xmlStr =  "<tag1>val1<content/></tag1>";
         jsonObject = XML.toJSONObject(xmlStr);
@@ -719,32 +722,32 @@ public class XMLTest {
         /*
          * Confirm behavior of original issue
          */
-        String jsonStr = 
+        String jsonStr =
                 "{"+
-                    "\"Profile\": {"+
+                        "\"Profile\": {"+
                         "\"list\": {"+
-                            "\"history\": {"+
-                                "\"entries\": ["+
-                                    "{"+
-                                        "\"deviceId\": \"id\","+
-                                        "\"content\": {"+
-                                            "\"material\": ["+
-                                                "{"+
-                                                    "\"stuff\": false"+
-                                                "}"+
-                                            "]"+
-                                        "}"+
-                                    "}"+
-                                "]"+
-                            "}"+
+                        "\"history\": {"+
+                        "\"entries\": ["+
+                        "{"+
+                        "\"deviceId\": \"id\","+
+                        "\"content\": {"+
+                        "\"material\": ["+
+                        "{"+
+                        "\"stuff\": false"+
                         "}"+
-                    "}"+
-                "}";
+                        "]"+
+                        "}"+
+                        "}"+
+                        "]"+
+                        "}"+
+                        "}"+
+                        "}"+
+                        "}";
         jsonObject = new JSONObject(jsonStr);
         xmlStr = XML.toString(jsonObject);
         /*
          * This is the created XML. Looks like content was mistaken for
-         * complex (child node + text) XML. 
+         * complex (child node + text) XML.
          *  <Profile>
          *      <list>
          *          <history>
@@ -787,7 +790,7 @@ public class XMLTest {
     /**
      * Convenience method, given an input string and expected result, convert to
      * JSONObject via file and compare actual to expected result.
-     * 
+     *
      * @param xmlStr
      *            the string to parse
      * @param expectedStr
@@ -849,9 +852,9 @@ public class XMLTest {
         final JSONObject expected = new JSONObject("{\"root\":{\"item\":{\"id\":\"01\"},\"id\":[\"01\",\"1\",\"00\",\"0\"],\"title\":\"True\"}}");
 
         final JSONObject actual = XML.toJSONObject(originalXml,true);
-        
+
         Util.compareActualVsExpectedJsonObjects(actual, expected);
-        
+
         final String reverseXml = XML.toString(actual);
         // this reversal isn't exactly the same. use JSONML for an exact reversal
         // the order of the elements may be differnet as well.
@@ -862,7 +865,7 @@ public class XMLTest {
         assertTrue("item contents", reverseXml.contains("<item><id>01</id></item>"));
         assertTrue("title contents", reverseXml.contains("<title>True</title>"));
     }
-    
+
     /**
      * test to validate certain conditions of XML unescaping.
      */
@@ -889,12 +892,12 @@ public class XMLTest {
         assertEquals("{\"xml\":\"Can cope &lt;\"}",
                 XML.toJSONObject("<xml>Can cope &amp;lt; </xml>").toString());
         assertEquals("Can cope &lt; ", XML.unescape("Can cope &amp;lt; "));
-        
+
         assertEquals("{\"xml\":\"Can cope &#x34;\"}",
                 XML.toJSONObject("<xml>Can cope &amp;#x34; </xml>").toString());
         assertEquals("Can cope &#x34; ", XML.unescape("Can cope &amp;#x34; "));
 
-   }
+    }
 
     /**
      * test passes when xsi:nil="true" converting to null (JSON specification-like nil conversion enabled)
@@ -906,9 +909,9 @@ public class XMLTest {
 
         final JSONObject json = XML.toJSONObject(originalXml,
                 new XMLParserConfiguration()
-                    .withKeepStrings(false)
-                    .withcDataTagName("content")
-                    .withConvertNilAttributeToNull(true));
+                        .withKeepStrings(false)
+                        .withcDataTagName("content")
+                        .withConvertNilAttributeToNull(true));
         assertEquals(expectedJsonString, json.toString());
     }
 
@@ -929,11 +932,11 @@ public class XMLTest {
      */
     @Test
     public void testIssue537CaseSensitiveHexEscapeMinimal(){
-        String xmlStr = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<root>Neutrophils.Hypersegmented &#X7C; Bld-Ser-Plas</root>";
-        String expectedStr = 
-            "{\"root\":\"Neutrophils.Hypersegmented | Bld-Ser-Plas\"}";
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<root>Neutrophils.Hypersegmented &#X7C; Bld-Ser-Plas</root>";
+        String expectedStr =
+                "{\"root\":\"Neutrophils.Hypersegmented | Bld-Ser-Plas\"}";
         JSONObject xmlJSONObj = XML.toJSONObject(xmlStr, true);
         JSONObject expected = new JSONObject(expectedStr);
         Util.compareActualVsExpectedJsonObjects(xmlJSONObj, expected);
@@ -975,12 +978,12 @@ public class XMLTest {
      */
     @Test
     public void testIssue537CaseSensitiveHexUnEscapeDirect(){
-        String origStr = 
-            "Neutrophils.Hypersegmented &#X7C; Bld-Ser-Plas";
-        String expectedStr = 
-            "Neutrophils.Hypersegmented | Bld-Ser-Plas";
+        String origStr =
+                "Neutrophils.Hypersegmented &#X7C; Bld-Ser-Plas";
+        String expectedStr =
+                "Neutrophils.Hypersegmented | Bld-Ser-Plas";
         String actualStr = XML.unescape(origStr);
-        
+
         assertEquals("Case insensitive Entity unescape",  expectedStr, actualStr);
     }
 
@@ -1075,5 +1078,32 @@ public class XMLTest {
             });
             fail("Expected to be unable to modify the config");
         } catch (Exception ignored) { }
+    }
+
+    // milestone5
+    @Test
+    public void testTransformJSONObjectKeyAsynReturnType() {
+        try {
+            FileReader reader = new FileReader("src/test/resources/books.xml");
+            Function<String, String> keyTransformer = (key) -> "swe262_" + key;
+            Consumer<Exception> exceptionHandler = (e) -> e.printStackTrace();
+
+            Future<JSONObject> futureActual = XML.toJSONObject(reader, keyTransformer, exceptionHandler);
+
+            while (!futureActual.isDone()) {
+                System.out.println("Calculating...");
+                Thread.sleep(300);
+            }
+
+            JSONObject actual = futureActual.get();
+
+            assertTrue(actual instanceof JSONObject);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 }
